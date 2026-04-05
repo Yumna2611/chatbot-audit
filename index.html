@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Banking Audit Tool – Yumna Khan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e0dfd8; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .header-left h1 { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+  .header-left p { font-size: 12px; color: #888; margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .badge { background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; border: 1px solid #bfdbfe; }
+  .free-badge { background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; border: 1px solid #bbf7d0; }
+
+  .main { max-width: 900px; margin: 0 auto; padding: 28px 20px; }
+
+  .intro-box { background: #fff; border: 1px solid #e8e7e0; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px; }
+  .intro-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .intro-box h2 { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .intro-box p { font-size: 13px; color: #555; line-height: 1.6; }
+
+  .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .metric-card { background: #fff; border: 1px solid #e8e7e0; border-radius: 10px; padding: 14px 16px; }
+  .metric-card .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .metric-card .value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+  .metric-card .sub { font-size: 11px; color: #888; margin-top: 2px; }
+  .metric-card.green .value { color: #16a34a; }
+  .metric-card.amber .value { color: #d97706; }
+
+  .panel { background: #fff; border: 1px solid #e8e7e0; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .panel-header { padding: 14px 20px; border-bottom: 1px solid #f0efe8; display: flex; align-items: center; gap: 10px; }
+  .panel-header h2 { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .panel-header .step { background: #1a1a1a; color: #fff; font-size: 11px; font-weight: 600; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .panel-body { padding: 20px; }
+
+  .sample-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .sample-btn { background: #f5f4f0; border: 1px solid #e0dfd8; border-radius: 6px; padding: 6px 12px; font-size: 12px; color: #555; cursor: pointer; transition: all 0.15s; }
+  .sample-btn:hover { background: #eae9e3; border-color: #ccc; }
+
+  textarea { width: 100%; border: 1px solid #dddcd5; border-radius: 8px; padding: 14px; font-size: 13px; font-family: 'SF Mono', 'Courier New', monospace; color: #1a1a1a; background: #fafaf8; resize: vertical; min-height: 200px; line-height: 1.6; outline: none; transition: border-color 0.15s; }
+  textarea:focus { border-color: #888; background: #fff; }
+  .char-count { font-size: 11px; color: #aaa; text-align: right; margin-top: 4px; }
+
+  .analyze-btn { width: 100%; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .analyze-btn:hover:not(:disabled) { background: #333; }
+  .analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .results-area { display: none; }
+  .results-area.visible { display: block; }
+
+  .score-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .score-box { border-radius: 8px; padding: 14px 16px; }
+  .score-box.good { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .score-box.bad { background: #fef2f2; border: 1px solid #fecaca; }
+  .score-box.warn { background: #fffbeb; border: 1px solid #fde68a; }
+  .score-box .slabel { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .score-box.good .slabel { color: #16a34a; }
+  .score-box.bad .slabel { color: #dc2626; }
+  .score-box.warn .slabel { color: #d97706; }
+  .score-box .sval { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+  .score-box .sdesc { font-size: 12px; color: #555; margin-top: 4px; line-height: 1.5; }
+
+  .finding { border-left: 3px solid #e0dfd8; padding: 10px 14px; margin-bottom: 8px; border-radius: 0 6px 6px 0; background: #fafaf8; }
+  .finding.critical { border-left-color: #dc2626; background: #fef9f9; }
+  .finding.medium { border-left-color: #d97706; background: #fffdf5; }
+  .finding.positive { border-left-color: #16a34a; background: #f8fffe; }
+  .finding .ftitle { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 3px; }
+  .finding .fdesc { font-size: 12px; color: #555; line-height: 1.5; }
+
+  .rec-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0efe8; align-items: flex-start; }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-num { background: #1a1a1a; color: #fff; font-size: 11px; font-weight: 600; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .rec-text { font-size: 13px; color: #333; line-height: 1.5; flex: 1; }
+  .rec-kpi { display: inline-block; background: #eff6ff; color: #1d4ed8; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; margin-left: 4px; }
+  .rec-effort { font-size: 10px; color: #888; margin-left: 4px; }
+
+  .loading { display: none; text-align: center; padding: 40px; }
+  .loading.visible { display: block; }
+  .spinner { width: 32px; height: 32px; border: 2px solid #e0dfd8; border-top-color: #1a1a1a; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title { font-size: 14px; font-weight: 500; color: #333; margin-bottom: 4px; }
+  .loading-sub { font-size: 12px; color: #888; }
+
+  .error-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 16px; font-size: 13px; color: #991b1b; display: none; margin-bottom: 16px; }
+  .error-box.visible { display: block; }
+
+  .section-label { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+
+  .footer-note { text-align: center; font-size: 11px; color: #aaa; margin-top: 28px; padding-bottom: 20px; }
+  .footer-note a { color: #888; }
+
+  @media (max-width: 600px) {
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .score-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>WhatsApp Banking Chatbot Audit Tool</h1>
+    <p>AI-powered PM analysis for conversational banking flows</p>
+  </div>
+  <div class="header-right">
+    <span class="free-badge">Free to use</span>
+    <span class="badge">PM Demo · Yumna Khan</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="label">Avg agent cost saved</div>
+      <div class="value">₹150</div>
+      <div class="sub">per contained query</div>
+    </div>
+    <div class="metric-card amber">
+      <div class="label">Audits run</div>
+      <div class="value" id="audit-count">0</div>
+      <div class="sub">this session</div>
+    </div>
+    <div class="metric-card green">
+      <div class="label">Avg quality score</div>
+      <div class="value" id="avg-score">–</div>
+      <div class="sub">across audits</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Issues flagged</div>
+      <div class="value" id="issues-count">0</div>
+      <div class="sub">critical + medium</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="step">1</div>
+      <h2>Paste a WhatsApp banking conversation</h2>
+    </div>
+    <div class="panel-body">
+      <div class="sample-btns">
+        <span style="font-size:12px;color:#888;margin-right:4px;align-self:center;">Load a sample:</span>
+        <button class="sample-btn" onclick="loadSample(1)">Balance inquiry (broken flow)</button>
+        <button class="sample-btn" onclick="loadSample(2)">Failed loan query</button>
+        <button class="sample-btn" onclick="loadSample(3)">Successful FD booking</button>
+      </div>
+      <textarea id="transcript" placeholder="Customer: Hi, I want to check my account balance&#10;Bot: Welcome to HDFC Bank! How can I help you?&#10;Customer: Balance please&#10;Bot: Please visit your nearest branch..." oninput="updateCharCount()"></textarea>
+      <div class="char-count" id="char-count">0 / 8000 characters</div>
+
+      <div class="error-box" id="error-box"></div>
+
+      <button class="analyze-btn" id="analyze-btn" onclick="runAudit()">
+        <span id="btn-text">Analyze this conversation →</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-title">Running PM audit...</div>
+    <div class="loading-sub">Analyzing intent, bot quality, and improvement opportunities</div>
+  </div>
+
+  <div class="results-area" id="results-area">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="step">2</div>
+        <h2>PM Audit Report</h2>
+      </div>
+      <div class="panel-body">
+
+        <div class="score-row" id="score-row"></div>
+
+        <div class="section-label">Findings</div>
+        <div id="findings-area" style="margin-bottom:16px;"></div>
+
+        <div class="section-label">Prioritised recommendations</div>
+        <div id="recs-area"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Built by <a href="#">Yumna Khan</a> · Software Engineer → Product Manager · 
+    <a href="#">LinkedIn</a> · <a href="#">Portfolio</a>
+    <br>Powered by Claude AI · Conversations are not stored
+  </div>
+
+</div>
+
+<script>
+const samples = {
+  1: `Customer: Hi I want to check my savings account balance
+Bot: Welcome to HDFC Bank WhatsApp Banking! Please choose from the following options:
+1. Account Services
+2. Loan Services
+3. Credit Card Services
+4. Other Services
+Customer: 1
+Bot: Please select:
+1. Account Balance
+2. Mini Statement
+3. Account Details
+Customer: Balance
+Bot: I did not understand your response. Please reply with a number between 1-3.
+Customer: 1
+Bot: To check your account balance, please visit your nearest HDFC Bank branch or call 1800-202-6161.
+Customer: why cant you just tell me the balance
+Bot: I apologize for the inconvenience. Is there anything else I can help you with?
+Customer: [left the chat]`,
+  2: `Customer: I want a home loan
+Bot: Hello! Welcome to HDFC Bank. How can I assist you today?
+Customer: Home loan inquiry
+Bot: Please visit www.hdfcbank.com/loans or call our helpline.
+Customer: What is the interest rate currently?
+Bot: Interest rates vary. Please speak to our representative for details.
+Customer: Can I apply online?
+Bot: Yes you can. Please visit our website.
+Customer: Which website?
+Bot: www.hdfcbank.com
+Customer: What documents do I need?
+Bot: Please visit your nearest branch for document requirements.
+Customer: Ok forget it`,
+  3: `Customer: I want to open an FD
+Bot: Great! I can help you with Fixed Deposit. What amount are you looking to invest?
+Customer: 50000
+Bot: For Rs 50,000 here are our current FD rates:
+- 1 year: 7.10% p.a.
+- 2 years: 7.20% p.a.
+- 3 years: 7.25% p.a.
+Which tenure would you prefer?
+Customer: 2 years sounds good
+Bot: Excellent! For Rs 50,000 at 7.20% for 2 years, your maturity amount will be approximately Rs 57,547.
+Would you like to proceed? Reply YES to confirm.
+Customer: Yes
+Bot: Your FD of Rs 50,000 for 2 years has been booked!
+FD Reference: HDFC2024FD00892
+Maturity date: June 12, 2026
+You will receive an SMS confirmation shortly. Is there anything else?
+Customer: No thanks that's great`
+};
+
+let auditCount = 0, totalScore = 0, totalIssues = 0;
+
+function loadSample(n) {
+  document.getElementById('transcript').value = samples[n];
+  updateCharCount();
+}
+
+function updateCharCount() {
+  const len = document.getElementById('transcript').value.length;
+  document.getElementById('char-count').textContent = `${len} / 8000 characters`;
+}
+
+async function runAudit() {
+  const transcript = document.getElementById('transcript').value.trim();
+  if (!transcript || transcript.length < 30) { showError('Please paste a conversation first, or click one of the sample buttons.'); return; }
+  if (transcript.length > 8000) { showError('Transcript is too long. Please trim it to under 8000 characters.'); return; }
+
+  hideError();
+  setLoading(true);
+  document.getElementById('results-area').classList.remove('visible');
+
+  try {
+    // Calls YOUR backend — API key is safe on the server
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || `Server error ${res.status}`);
+    }
+
+    renderResults(data);
+    updateMetrics(data);
+
+  } catch(err) {
+    showError(err.message || 'Something went wrong. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderResults(d) {
+  const scoreColor = d.bot_quality_score >= 7 ? 'good' : d.bot_quality_score >= 4 ? 'warn' : 'bad';
+  const containColor = d.containment_result === 'contained' ? 'good' : d.containment_result === 'escalated' ? 'warn' : 'bad';
+
+  document.getElementById('score-row').innerHTML = `
+    <div class="score-box ${scoreColor}">
+      <div class="slabel">Bot quality score</div>
+      <div class="sval">${d.bot_quality_score}<span style="font-size:14px;font-weight:400;color:#888"> / 10</span></div>
+      <div class="sdesc">${d.pm_summary || ''}</div>
+    </div>
+    <div class="score-box ${containColor}">
+      <div class="slabel">Containment result</div>
+      <div class="sval">${d.containment_result}</div>
+      <div class="sdesc"><strong>Intent:</strong> ${d.intent_detected}<br><strong>KPI at risk:</strong> ${d.kpi_impact}</div>
+    </div>
+  `;
+
+  const icons = { critical: '🔴', medium: '🟡', positive: '✅' };
+  document.getElementById('findings-area').innerHTML = (d.findings || []).map(f => `
+    <div class="finding ${f.severity}">
+      <div class="ftitle">${icons[f.severity] || ''} ${f.title}</div>
+      <div class="fdesc">${f.description}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('recs-area').innerHTML = (d.recommendations || []).map((r, i) => `
+    <div class="rec-item">
+      <div class="rec-num">${i + 1}</div>
+      <div class="rec-text">
+        ${r.action}
+        <span class="rec-kpi">↑ ${r.kpi}</span>
+        <span class="rec-effort">Effort: ${r.effort}</span>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('results-area').classList.add('visible');
+  document.getElementById('results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateMetrics(d) {
+  auditCount++;
+  totalScore += d.bot_quality_score;
+  totalIssues += (d.findings || []).filter(f => f.severity !== 'positive').length;
+  document.getElementById('audit-count').textContent = auditCount;
+  document.getElementById('avg-score').textContent = (totalScore / auditCount).toFixed(1) + '/10';
+  document.getElementById('issues-count').textContent = totalIssues;
+}
+
+function setLoading(on) {
+  document.getElementById('loading').classList.toggle('visible', on);
+  document.getElementById('analyze-btn').disabled = on;
+  document.getElementById('btn-text').textContent = on ? 'Analyzing...' : 'Analyze this conversation →';
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function hideError() {
+  document.getElementById('error-box').classList.remove('visible');
+}
+</script>
+</body>
+</html>
